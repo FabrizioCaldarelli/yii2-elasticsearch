@@ -87,9 +87,6 @@ class ActiveDataProvider extends \yii\data\ActiveDataProvider
 
         $query = clone $this->query;
 
-        $results = $query->search($this->db);
-        $this->setQueryResults(is_array($results) ? $results : []);
-
         if (($pagination = $this->getPagination()) !== false) {
             // pagination fails to validate page number, because total count is unknown at this stage
             $pagination->validatePage = false;
@@ -103,7 +100,10 @@ class ActiveDataProvider extends \yii\data\ActiveDataProvider
             $pagination->totalCount = $this->getTotalCount();
         }
 
-        return $results['hits']['hits'];
+        $results = $query->search($this->db);
+        $this->setQueryResults(is_array($results) ? $results : []);
+
+        return (is_array($results) && isset($results['hits']['hits'])) ? $results['hits']['hits'] : [];
     }
 
     /**
@@ -115,7 +115,8 @@ class ActiveDataProvider extends \yii\data\ActiveDataProvider
             throw new InvalidConfigException('The "query" property must be an instance "' . Query::className() . '" or its subclasses.');
         }
 
-        $results = $this->getQueryResults();
+        $results = $this->query->createCommand($this->db)->search([]);
+
         return isset($results['hits']['total']) ? (int)$results['hits']['total'] : 0;
     }
 
